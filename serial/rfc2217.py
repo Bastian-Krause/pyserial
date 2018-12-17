@@ -621,7 +621,9 @@ class Serial(SerialBase):
                     raise SerialException('connection failed (reader thread died)')
                 buf = self._read_buffer.get(True, timeout.time_left())
                 if buf is None:
-                    return bytes(data)
+                    raise SerialException('connection failed')
+                if buf == "":
+                    break
                 data += buf
                 if timeout.expired():
                     break
@@ -767,7 +769,8 @@ class Serial(SerialBase):
                     self._read_buffer.put(None)
                     break
                 if not data:
-                    self._read_buffer.put(None)
+                    # return empty string on peer close as recv system call does
+                    self._read_buffer.put('')
                     break  # lost connection
                 for byte in iterbytes(data):
                     if mode == M_NORMAL:
